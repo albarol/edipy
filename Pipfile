@@ -1,0 +1,21 @@
+[[source]]
+url = "https://pypi.python.org/simple"
+verify_ssl = true
+
+[dev-packages]
+
+ipython = "*"
+pytest = "*"
+ipdb = "*"
+pydot = "*"
+
+
+[packages]
+lark-parser = "*"
+
+
+
+
+
+[requires]
+python_version = "2.7"

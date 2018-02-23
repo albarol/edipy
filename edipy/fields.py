@@ -1,8 +1,8 @@
 # coding: utf-8
 
+from decimal import Decimal as DecimalType
 from collections import OrderedDict
 import itertools
-import inspect
 
 
 class FixedType(object):
@@ -51,13 +51,39 @@ class String(FixedType):
     def decode(self, value):
         return value
 
+
+class DateTime(FixedType):
+
+    def __init__(self, size, timezone=None):
+        super(DateTime, self).__init__()
+        self.size = size
+
+
+class Decimal(FixedType):
+
+    def __init__(self, size, digits=0):
+        super(Decimal, self).__init__()
+        self.size = size + digits
+        self.value = size
+        self.digits = digits
+
+    def encode(self, value):
+        if self.digits:
+            denominator, digits = value[0:self.value], value[-self.digits:]
+        else:
+            denominator, digits = value, ""
+        return DecimalType("{}.{}".format(denominator, digits))
+
+
 class EDIMeta(type):
 
     def __new__(cls, name, bases, attrs):
         new_cls = type.__new__(cls, name, bases, attrs)
-        values = [(k, v) for k, v in attrs.iteritems() if isinstance(v, FixedType)]
-        new_cls._fields = OrderedDict([(k, v) for k, v in sorted(values, key=lambda (k, v): v.__order__)])
+        values = [(k, v, v.size) for k, v in attrs.iteritems() if isinstance(v, FixedType)]
+        new_cls._fields = OrderedDict([(k, v) for (k, v, s) in sorted(values, key=lambda (k, v, s): v.__order__)])
+        new_cls._size = sum([s for k, v, s in values])
         return new_cls
+
 
 class EDIModel(object):
     __metaclass__ = EDIMeta

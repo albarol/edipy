@@ -1,21 +1,24 @@
 # coding: utf-8
 
-from edipy import fields
-from edipy.parser import parse
+import pytest
+
+from edipy import fields, parser, exceptions
+
+class Example(fields.EDIModel):
+    identifier = fields.Integer(3)
+    name = fields.String(10)
+    date = fields.DateTime(8)
+    value = fields.Decimal(8, 2)
+    bank_identifier = fields.Integer(3)
+    bank_name = fields.String(18)
 
 
-class Doccob(fields.EDIModel):
-    identifier = fields.String(3)
-    remetente = fields.String(35)
-    destinatario = fields.String(35)
-    data = fields.Integer(6, zfill=True)
-    hora = fields.Integer(4, zfill=True)
-    exchange_identification = fields.String(12)
-    #filler = fields.String(75)
-
-
-def test_parse_line():
-    line = '000L4B LOGISTICA LTDA                 Luxottica                          2812161618COB281216180'
-    tree = parse(Doccob, line)
+def test_parse_example():
+    line = '352NEDI      230220120000007194001BANCO EDI        '
+    example = parser.parse(Example, line)
     assert 1 == 1
 
+def test_parse_example_with_wrong_layout():
+    line = '352NEDI      230220120000007194001BANCO EDI               '
+    with pytest.raises(exceptions.LayoutException):
+        example = parser.parse(Example, line)

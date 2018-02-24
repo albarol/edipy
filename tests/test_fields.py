@@ -1,10 +1,11 @@
 # coding: utf-8
 
+from datetime import datetime
 from decimal import Decimal
 
 import pytest
 
-from edipy import fields
+from edipy import fields, exceptions
 
 
 @pytest.mark.parametrize('fixed_type, value, expected', [
@@ -28,6 +29,28 @@ from edipy import fields
     (fields.Decimal(1, 2), '7211', Decimal('2.11')),
     (fields.Decimal(1, 3), '7211', Decimal('7.211')),
     (fields.Decimal(1, 3), '', None),
+
+    (fields.DateTime(8, '%d%m%Y'), '23022012', datetime(2012, 02, 23)),
+    (fields.DateTime(14, '%d%m%Y%H%M%S'), '23022012235959', datetime(2012, 02, 23, 23, 59, 59)),
+    (fields.DateTime(8, '%d%m%Y%'), '', None),
+    (fields.DateTime(8, '%d%m%Y%'), '', None),
+
+    (fields.Enum(['I', 'A']), 'I', 'I'),
+    (fields.Enum(['I', 'A']), 'A', 'A'),
 ])
 def test_encode_data(fixed_type, value, expected):
     assert fixed_type.encode(value) == expected
+
+
+def test_field_validate_type():
+    class NoEDIModel(object):
+        pass
+
+    with pytest.raises(exceptions.FieldNotSupportedError):
+        fields.Field(NoEDIModel)
+
+
+@pytest.mark.parametrize('values', [[], ['AB']])
+def test_field_validate_enum(values):
+    with pytest.raises(exceptions.FieldNotSupportedError):
+        fields.Enum(values)

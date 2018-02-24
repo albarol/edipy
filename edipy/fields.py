@@ -1,5 +1,6 @@
 # coding: utf-8
 
+from datetime import datetime
 from decimal import Decimal as DecimalType
 from collections import OrderedDict
 import itertools
@@ -16,13 +17,17 @@ class FixedType(object):
     __counter = itertools.count()
     size = 0
 
-    def __init__(self):
+    def __init__(self, validators=None):
         self.__order__ = self.__counter.next()
+        self.validators = validators if validators else []
 
     def encode(self, value):
-        if not value:
-            return None
-        return self._to_python(value)
+        if value:
+            value = self._to_python(value)
+        for validator in self.validators:
+            if not validator.validate(value):
+                raise exceptions.ValidationError()
+        return value if value else None
 
     def _to_python(self, value):
         return str(value)
@@ -37,8 +42,8 @@ class FixedType(object):
 class Integer(FixedType):
     zfill = False
 
-    def __init__(self, size, zfill=False):
-        super(Integer, self).__init__()
+    def __init__(self, size, zfill=False, validators=None):
+        super(Integer, self).__init__(validators=validators)
         self.size = size
         self.zfill = zfill
 
@@ -51,8 +56,8 @@ class Integer(FixedType):
 
 class String(FixedType):
 
-    def __init__(self, size):
-        super(String, self).__init__()
+    def __init__(self, size, validators=None):
+        super(String, self).__init__(validators=validators)
         self.size = size
 
     def _to_python(self, value):
@@ -62,10 +67,24 @@ class String(FixedType):
         return value
 
 
+class Identifier(FixedType):
+
+    def __init__(self, identifier, validators=None):
+        super(Identifier, self).__init__(validators=validators)
+        self.size = len(identifier)
+        self.identifier = identifier
+
+
+    def _to_python(self, value):
+        if value != self.identifier:
+            raise exceptions.ValidationError()
+        return self.identifier
+
+
 class Decimal(FixedType):
 
-    def __init__(self, size, digits=0):
-        super(Decimal, self).__init__()
+    def __init__(self, size, digits=0, validators=None):
+        super(Decimal, self).__init__(validators=validators)
         self.size = size + digits
         self.denominator = size
         self.digits = digits
@@ -81,18 +100,19 @@ class Decimal(FixedType):
 
 class DateTime(FixedType):
 
-    def __init__(self, size, timezone=None):
-        super(DateTime, self).__init__()
+    def __init__(self, size, date_format, validators=None):
+        super(DateTime, self).__init__(validators=validators)
         self.size = size
+        self.date_format = date_format
 
     def _to_python(self, value):
-        return value
+        return datetime.strptime(value, self.date_format)
 
 
 class Field(FixedType):
 
-    def __init__(self, cls):
-        super(Field, self).__init__()
+    def __init__(self, cls, validators=None):
+        super(Field, self).__init__(validators=validators)
         if not issubclass(cls, EDIModel):
             raise exceptions.FieldNotSupportedError()
         self.size = cls._size
@@ -100,6 +120,22 @@ class Field(FixedType):
 
     def _to_python(self, value):
         return (self.model, value)
+
+
+class Enum(FixedType):
+    size = 1
+
+    def __init__(self, values, validators=None):
+        super(Enum, self).__init__(validators=validators)
+
+        if not values or any([value for value in values if len(value) != 1]):
+            raise exceptions.FieldNotSupportedError()
+        self.values = set(values)
+
+    def _to_python(self, value):
+        if value not in self.values:
+            raise exceptions.ValidationError()
+        return value
 
 
 class EDIMeta(type):

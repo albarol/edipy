@@ -4,6 +4,8 @@ from decimal import Decimal as DecimalType
 from collections import OrderedDict
 import itertools
 
+from edipy import exceptions
+
 
 class FixedType(object):
     """
@@ -18,9 +20,17 @@ class FixedType(object):
         self.__order__ = self.__counter.next()
 
     def encode(self, value):
-       return value
+        if not value:
+            return None
+        return self._to_python(value)
+
+    def _to_python(self, value):
+        return str(value)
 
     def decode(self, value):
+        return self._to_edi(value)
+
+    def _to_edi(self, value):
         return value
 
 
@@ -32,8 +42,8 @@ class Integer(FixedType):
         self.size = size
         self.zfill = zfill
 
-    def encode(self, value):
-        return int(value)
+    def _to_python(self, value):
+        return int(value[-self.size:])
 
     def decode(self, value):
         return str(value)
@@ -45,11 +55,28 @@ class String(FixedType):
         super(String, self).__init__()
         self.size = size
 
-    def encode(self, value):
-        return value
+    def _to_python(self, value):
+        return value[:self.size]
 
     def decode(self, value):
         return value
+
+
+class Decimal(FixedType):
+
+    def __init__(self, size, digits=0):
+        super(Decimal, self).__init__()
+        self.size = size + digits
+        self.denominator = size
+        self.digits = digits
+
+    def _to_python(self, value):
+        if self.digits:
+            denominator, digits = value[:-self.digits], value[-self.digits:]
+            denominator = denominator[-self.denominator:]
+        else:
+            denominator, digits = value[-self.denominator:], ""
+        return DecimalType("{}.{}".format(denominator, digits))
 
 
 class DateTime(FixedType):
@@ -58,21 +85,21 @@ class DateTime(FixedType):
         super(DateTime, self).__init__()
         self.size = size
 
+    def _to_python(self, value):
+        return value
 
-class Decimal(FixedType):
 
-    def __init__(self, size, digits=0):
-        super(Decimal, self).__init__()
-        self.size = size + digits
-        self.value = size
-        self.digits = digits
+class Field(FixedType):
 
-    def encode(self, value):
-        if self.digits:
-            denominator, digits = value[0:self.value], value[-self.digits:]
-        else:
-            denominator, digits = value, ""
-        return DecimalType("{}.{}".format(denominator, digits))
+    def __init__(self, cls):
+        super(Field, self).__init__()
+        if not issubclass(cls, EDIModel):
+            raise exceptions.FieldNotSupportedError()
+        self.size = cls._size
+        self.model = cls
+
+    def _to_python(self, value):
+        return (self.model, value)
 
 
 class EDIMeta(type):

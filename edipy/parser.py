@@ -6,15 +6,17 @@ from edipy import fields, exceptions
 
 
 def parse(model, data):
-    fields = model._fields.iteritems()
+    data = "".join(data.splitlines())
+    model_fields = model._fields.iteritems()
     instance = model()
-    for (name, fixed_type) in fields:
+    for (name, fixed_type) in model_fields:
         value = data[0:fixed_type.size]
-        setattr(instance, name, fixed_type.encode(value))
+        if len(value) != fixed_type.size:
+            raise exceptions.WrongLayoutError('Layout is different from data.')
+
+        if isinstance(fixed_type, fields.Field):
+            setattr(instance, name, parse(*fixed_type.encode(value)))
+        else:
+            setattr(instance, name, fixed_type.encode(value))
         data = data[fixed_type.size:]
-
-    if data:
-        raise exceptions.LayoutException(':moises:')
-
     return instance
-

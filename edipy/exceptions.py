@@ -3,5 +3,8 @@
 class EDIException(Exception):
     pass
 
-class LayoutException(EDIException):
+class WrongLayoutError(EDIException):
+    pass
+
+class FieldNotSupportedError(EDIException):
     pass

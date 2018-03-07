@@ -42,15 +42,32 @@ def test_encode_data(fixed_type, value, expected):
     assert fixed_type.encode(value) == expected
 
 
-def test_field_validate_type():
+@pytest.mark.parametrize('fixed_type, value', [
+    (fields.String(1, required=True), ''),
+    (fields.String(1, required=True), '         '),
+    (fields.String(1, required=True), None),
+])
+def test_required_data(fixed_type, value):
+    with pytest.raises(exceptions.ValidationError):
+        fixed_type.encode(value)
+
+
+def test_register_validate_type():
     class NoEDIModel(object):
         pass
 
-    with pytest.raises(exceptions.FieldNotSupportedError):
+    with pytest.raises(exceptions.BadFormatError):
         fields.Register(NoEDIModel)
+
+def test_register_validate_identifier():
+    class MyEDIModel(fields.EDIModel):
+        identifier = fields.Integer(3)
+
+    with pytest.raises(exceptions.BadFormatError):
+        fields.Register(MyEDIModel)
 
 
 @pytest.mark.parametrize('values', [[], ['AB']])
 def test_field_validate_enum(values):
-    with pytest.raises(exceptions.FieldNotSupportedError):
+    with pytest.raises(exceptions.BadFormatError):
         fields.Enum(values)

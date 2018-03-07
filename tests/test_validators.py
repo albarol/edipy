@@ -6,15 +6,6 @@ from edipy import fields, validators, exceptions
 
 
 @pytest.mark.parametrize('fixed_type, data', [
-    (fields.String(3, validators=[validators.Required()]), ''),
-    (fields.Integer(2, validators=[validators.Required()]), ''),
-])
-def test_validate_required(fixed_type, data):
-    with pytest.raises(exceptions.ValidationError):
-        fixed_type.encode(data)
-
-
-@pytest.mark.parametrize('fixed_type, data', [
     (fields.Integer(1, validators=[validators.Range(1, 5)]), '0'),
     (fields.Integer(1, validators=[validators.Range(1, 5)]), '6'),
 ])

@@ -16,17 +16,26 @@ class FixedType(object):
     __counter = itertools.count()
     size = 0
 
-    def __init__(self, validators=None):
+    def __init__(self, required=False, validators=None):
         self.__order__ = self.__counter.next()
         self.validators = validators if validators else []
+        self.required = required
+
+    def _has_value(self, value):
+        return value and not value.isspace()
 
     def encode(self, value):
-        if value:
-            value = self._to_python(value)
+        if self.required and not self._has_value(value):
+            raise exceptions.ValidationError(u"Field is required.")
+
+        if not self.required and not self._has_value(value):
+            return None
+
+        value = self._to_python(value)
         for validator in self.validators:
             if not validator.validate(value):
                 raise exceptions.ValidationError()
-        return value if value else None
+        return value
 
     def _to_python(self, value):
         return str(value)
@@ -41,8 +50,8 @@ class FixedType(object):
 class Integer(FixedType):
     zfill = False
 
-    def __init__(self, size, zfill=False, validators=None):
-        super(Integer, self).__init__(validators=validators)
+    def __init__(self, size, zfill=False, required=False, validators=None):
+        super(Integer, self).__init__(validators=validators, required=required)
         self.size = size
         self.zfill = zfill
 
@@ -55,8 +64,8 @@ class Integer(FixedType):
 
 class String(FixedType):
 
-    def __init__(self, size, validators=None):
-        super(String, self).__init__(validators=validators)
+    def __init__(self, size, required=False, validators=None):
+        super(String, self).__init__(validators=validators, required=required)
         self.size = size
 
     def _to_python(self, value):
@@ -68,8 +77,8 @@ class String(FixedType):
 
 class Identifier(FixedType):
 
-    def __init__(self, identifier, validators=None):
-        super(Identifier, self).__init__(validators=validators)
+    def __init__(self, identifier, required=False, validators=None):
+        super(Identifier, self).__init__(validators=validators, required=required)
         self.size = len(identifier)
         self.identifier = identifier
 
@@ -82,8 +91,8 @@ class Identifier(FixedType):
 
 class Decimal(FixedType):
 
-    def __init__(self, size, digits=0, validators=None):
-        super(Decimal, self).__init__(validators=validators)
+    def __init__(self, size, digits=0, required=False, validators=None):
+        super(Decimal, self).__init__(validators=validators, required=required)
         self.size = size + digits
         self.denominator = size
         self.digits = digits
@@ -99,8 +108,8 @@ class Decimal(FixedType):
 
 class DateTime(FixedType):
 
-    def __init__(self, size, date_format, validators=None):
-        super(DateTime, self).__init__(validators=validators)
+    def __init__(self, size, date_format, required=False, validators=None):
+        super(DateTime, self).__init__(validators=validators, required=required)
         self.size = size
         self.date_format = date_format
 
@@ -110,14 +119,13 @@ class DateTime(FixedType):
 
 class Register(FixedType):
 
-    def __init__(self, cls, validators=None):
-        super(Register, self).__init__(validators=validators)
+    def __init__(self, cls, required=False, validators=None):
+        super(Register, self).__init__(validators=validators, required=required)
         if not issubclass(cls, EDIModel):
-            raise exceptions.FieldNotSupportedError()
+            raise exceptions.BadFormatError(message=u"Field is not subclass of EDIModel.")
 
-        identifier = cls._fields[0][1]
-        if not isinstance(identifier, Identifier):
-            raise exceptions.FieldNotSupportedError()
+        if not cls._fields or not isinstance(cls._fields[0][1], Identifier):
+            raise exceptions.BadFormatError(message=u"First argument must be an Identifier.")
 
         self.size = cls._size
         self.model = cls
@@ -129,11 +137,11 @@ class Register(FixedType):
 class Enum(FixedType):
     size = 1
 
-    def __init__(self, values, validators=None):
-        super(Enum, self).__init__(validators=validators)
+    def __init__(self, values, required=False, validators=None):
+        super(Enum, self).__init__(validators=validators, required=required)
 
         if not values or any([value for value in values if len(value) != 1]):
-            raise exceptions.FieldNotSupportedError()
+            raise exceptions.BadFormatError()
         self.values = set(values)
 
     def _to_python(self, value):

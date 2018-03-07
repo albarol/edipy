@@ -11,6 +11,7 @@ def parse(model, data):
     instance = model()
     for (name, fixed_type) in model_fields:
         value = data[0:fixed_type.size]
+
         if len(value) != fixed_type.size:
             raise exceptions.WrongLayoutError('Layout is different from data.')
 

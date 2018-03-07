@@ -47,7 +47,7 @@ def test_field_validate_type():
         pass
 
     with pytest.raises(exceptions.FieldNotSupportedError):
-        fields.Field(NoEDIModel)
+        fields.Register(NoEDIModel)
 
 
 @pytest.mark.parametrize('values', [[], ['AB']])

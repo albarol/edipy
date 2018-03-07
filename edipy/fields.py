@@ -2,7 +2,6 @@
 
 from datetime import datetime
 from decimal import Decimal as DecimalType
-from collections import OrderedDict
 import itertools
 
 from edipy import exceptions
@@ -109,12 +108,17 @@ class DateTime(FixedType):
         return datetime.strptime(value, self.date_format)
 
 
-class Field(FixedType):
+class Register(FixedType):
 
     def __init__(self, cls, validators=None):
-        super(Field, self).__init__(validators=validators)
+        super(Register, self).__init__(validators=validators)
         if not issubclass(cls, EDIModel):
             raise exceptions.FieldNotSupportedError()
+
+        identifier = cls._fields[0][1]
+        if not isinstance(identifier, Identifier):
+            raise exceptions.FieldNotSupportedError()
+
         self.size = cls._size
         self.model = cls
 
@@ -143,7 +147,7 @@ class EDIMeta(type):
     def __new__(cls, name, bases, attrs):
         new_cls = type.__new__(cls, name, bases, attrs)
         values = [(k, v, v.size) for k, v in attrs.iteritems() if isinstance(v, FixedType)]
-        new_cls._fields = OrderedDict([(k, v) for (k, v, s) in sorted(values, key=lambda (k, v, s): v.__order__)])
+        new_cls._fields = [(k, v) for (k, v, s) in sorted(values, key=lambda (k, v, s): v.__order__)]
         new_cls._size = sum([s for k, v, s in values])
         return new_cls
 

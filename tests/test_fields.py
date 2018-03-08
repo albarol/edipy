@@ -67,7 +67,7 @@ def test_register_validate_identifier():
         fields.Register(MyEDIModel)
 
 
-@pytest.mark.parametrize('values', [[], ['AB']])
+@pytest.mark.parametrize('values', [[], ['AB', 'A']])
 def test_field_validate_enum(values):
     with pytest.raises(exceptions.BadFormatError):
         fields.Enum(values)

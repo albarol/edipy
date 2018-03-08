@@ -115,9 +115,11 @@ class DateTime(FixedType):
     def _to_python(self, value):
         return datetime.strptime(value, self.date_format)
 
+
 class Date(DateTime):
     def _to_python(self, value):
         return datetime.strptime(value, self.date_format).date()
+
 
 class Time(DateTime):
     def _to_python(self, value):
@@ -143,18 +145,22 @@ class Register(FixedType):
 
 
 class Enum(FixedType):
-    size = 1
 
     def __init__(self, values, required=False, validators=None):
         super(Enum, self).__init__(validators=validators, required=required)
 
-        if not values or any([value for value in values if len(value) != 1]):
-            raise exceptions.BadFormatError()
-        self.values = set(values)
+        if not values:
+            raise exceptions.BadFormatError(u"Empty values is not a valid value.")
+
+        self.values = map(str, values)
+        self.size = len(self.values[0])
+
+        if not all([len(v) == self.size for v in self.values]):
+            raise exceptions.BadFormatError(u"All values must have the same size.")
 
     def _to_python(self, value):
         if value not in self.values:
-            raise exceptions.ValidationError()
+            raise exceptions.ValidationError(u"Value {} is not a valid value.")
         return value
 
 

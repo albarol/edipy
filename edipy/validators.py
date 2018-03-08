@@ -2,17 +2,13 @@
 
 import re
 
+from edipy import exceptions
+
 
 class Validator(object):
 
     def validate(self, value):
         return True
-
-
-class Required(Validator):
-
-    def validate(self, value):
-        return True if value else False
 
 
 class Range(Validator):
@@ -22,18 +18,24 @@ class Range(Validator):
         self.max_value = max_value
 
     def validate(self, value):
-        return self.min_value <= value <= self.max_value
+        if not self.min_value <= value <= self.max_value:
+            raise exceptions.ValidationError(u"Value {0} is out of range.".format(value))
+        return True
 
 
 class Email(Validator):
     expression = re.compile(r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)")
 
     def validate(self, value):
-        return True if self.expression.search(value) else False
+        if not self.expression.search(value):
+            raise exceptions.ValidationError(u"Value {0} is not a valid email.".format(value))
+        return True
 
 
 class Cep(Validator):
     expression = re.compile(r"^[0-9]{8}\b")
 
     def validate(self, value):
-        return True if self.expression.search(value) else False
+        if not self.expression.search(value):
+            raise exceptions.ValidationError(u"Value {0} is not a valid cep.".format(value))
+        return True

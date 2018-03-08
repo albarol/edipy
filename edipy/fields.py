@@ -33,8 +33,7 @@ class FixedType(object):
 
         value = self._to_python(value)
         for validator in self.validators:
-            if not validator.validate(value):
-                raise exceptions.ValidationError()
+            validator.validate(value)
         return value
 
     def _to_python(self, value):

@@ -115,6 +115,15 @@ class DateTime(FixedType):
     def _to_python(self, value):
         return datetime.strptime(value, self.date_format)
 
+class Date(DateTime):
+    def _to_python(self, value):
+        return datetime.strptime(value, self.date_format).date()
+
+class Time(DateTime):
+    def _to_python(self, value):
+        return datetime.strptime(value, self.date_format).time()
+
+
 
 class Register(FixedType):
 

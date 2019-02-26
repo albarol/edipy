@@ -7,7 +7,7 @@ from edipy import fields, exceptions
 
 def parse(model, data):
     data = "".join(data.splitlines())
-    model_fields = model._fields.iteritems()
+    model_fields = model._fields
     instance = model()
     for (name, fixed_type) in model_fields:
         value = data[0:fixed_type.size]

@@ -1,0 +1,25 @@
+[tool.poetry]
+name = "edipy"
+version = "0.1.0"
+description = "Parser positional files"
+
+license = "MIT"
+
+authors = [
+    "Alexandre Barbieri <alexandre.dev.barbieri@gmail.com>"
+]
+
+readme = 'README.md'  # Markdown files are supported
+
+repository = "https://github.com/fakeezz/edipy"
+homepage = "https://github.com/fakeezz/edipy"
+
+keywords = ['parser', 'positional', 'edi']
+
+[tool.poetry.dependencies]
+python = "~2.7 || ^3.2"  # Compatible python versions must be declared here
+toml = "^0.9"
+
+[tool.poetry.dev-dependencies]
+pytest = "^3.0"
+pytest-cov = "^2.4"

@@ -17,17 +17,25 @@ class FixedType(object):
     __counter = itertools.count()
     size = 0
 
-    def __init__(self, validators=None):
+    def __init__(self, required=False, validators=None):
         self.__order__ = self.__counter.next()
         self.validators = validators if validators else []
+        self.required = required
+
+    def _has_value(self, value):
+        return value and not value.isspace()
 
     def encode(self, value):
-        if value:
-            value = self._to_python(value)
+        if self.required and not self._has_value(value):
+            raise exceptions.ValidationError(u"Field is required.")
+
+        if not self.required and not self._has_value(value):
+            return None
+
+        value = self._to_python(value)
         for validator in self.validators:
-            if not validator.validate(value):
-                raise exceptions.ValidationError()
-        return value if value else None
+            validator.validate(value)
+        return value
 
     def _to_python(self, value):
         return str(value)
@@ -38,12 +46,16 @@ class FixedType(object):
     def _to_edi(self, value):
         return value
 
+    @property
+    def length(self):
+        return self.size
+
 
 class Integer(FixedType):
     zfill = False
 
-    def __init__(self, size, zfill=False, validators=None):
-        super(Integer, self).__init__(validators=validators)
+    def __init__(self, size, zfill=False, required=False, validators=None):
+        super(Integer, self).__init__(validators=validators, required=required)
         self.size = size
         self.zfill = zfill
 
@@ -56,8 +68,8 @@ class Integer(FixedType):
 
 class String(FixedType):
 
-    def __init__(self, size, validators=None):
-        super(String, self).__init__(validators=validators)
+    def __init__(self, size, required=False, validators=None):
+        super(String, self).__init__(validators=validators, required=required)
         self.size = size
 
     def _to_python(self, value):
@@ -69,8 +81,8 @@ class String(FixedType):
 
 class Identifier(FixedType):
 
-    def __init__(self, identifier, validators=None):
-        super(Identifier, self).__init__(validators=validators)
+    def __init__(self, identifier, required=False, validators=None):
+        super(Identifier, self).__init__(validators=validators, required=required)
         self.size = len(identifier)
         self.identifier = identifier
 
@@ -83,8 +95,8 @@ class Identifier(FixedType):
 
 class Decimal(FixedType):
 
-    def __init__(self, size, digits=0, validators=None):
-        super(Decimal, self).__init__(validators=validators)
+    def __init__(self, size, digits=0, required=False, validators=None):
+        super(Decimal, self).__init__(validators=validators, required=required)
         self.size = size + digits
         self.denominator = size
         self.digits = digits
@@ -100,8 +112,8 @@ class Decimal(FixedType):
 
 class DateTime(FixedType):
 
-    def __init__(self, size, date_format, validators=None):
-        super(DateTime, self).__init__(validators=validators)
+    def __init__(self, size, date_format, required=False, validators=None):
+        super(DateTime, self).__init__(validators=validators, required=required)
         self.size = size
         self.date_format = date_format
 
@@ -109,34 +121,60 @@ class DateTime(FixedType):
         return datetime.strptime(value, self.date_format)
 
 
-class Field(FixedType):
+class Date(DateTime):
+    def _to_python(self, value):
+        return datetime.strptime(value, self.date_format).date()
 
-    def __init__(self, cls, occurrences=1, validators=None):
-        super(Field, self).__init__(validators=validators)
+
+class Time(DateTime):
+    def _to_python(self, value):
+        return datetime.strptime(value, self.date_format).time()
+
+class CompositeField(FixedType):
+
+    def __init__(self, cls, occurrences=1, required=False, validators=None):
+        super(CompositeField, self).__init__(validators=validators, required=required)
         if not issubclass(cls, EDIModel):
-            raise exceptions.FieldNotSupportedError()
+            raise exceptions.BadFormatError(message=u"Field is not subclass of EDIModel.")
 
-        self.occurrences = occurrences
-        self.size = cls._size
+        self.occurrences = occurrences        
+	self.size = cls._size
         self.model = cls
 
     def _to_python(self, value):
         return (self.model, value)
 
+    @property
+    def length(self):
+        return self.occurrences * self.size
+
+
+class Register(CompositeField):
+
+    def __init__(self, cls, occurrences=1, required=False, validators=None):
+        super(Register, self).__init__(cls, occurrences=occurrences, validators=validators, required=required)
+
+        if not cls._fields or not isinstance(cls._fields[0][1], Identifier):
+            raise exceptions.BadFormatError(message=u"First argument must be an Identifier.")
+
 
 class Enum(FixedType):
-    size = 1
 
-    def __init__(self, values, validators=None):
-        super(Enum, self).__init__(validators=validators)
+    def __init__(self, values, required=False, validators=None):
+        super(Enum, self).__init__(validators=validators, required=required)
 
-        if not values or any([value for value in values if len(value) != 1]):
-            raise exceptions.FieldNotSupportedError()
-        self.values = set(values)
+        if not values:
+            raise exceptions.BadFormatError(u"Empty value is not a valid value.")
+
+        self.values = map(str, values)
+        self.size = len(self.values[0])
+
+        if not all([len(v) == self.size for v in self.values]):
+            raise exceptions.BadFormatError(u"All values must have the same size.")
 
     def _to_python(self, value):
         if value not in self.values:
-            raise exceptions.ValidationError()
+            raise exceptions.ValidationError(u"Value {} is not a valid value.")
         return value
 
 
@@ -144,19 +182,10 @@ class EDIMeta(type):
 
     def __new__(cls, name, bases, attrs):
         new_cls = type.__new__(cls, name, bases, attrs)
-        values = []
-        fixed_types = [(k, v) for (k, v) in attrs.iteritems() if isinstance(v, FixedType)]
-        for (k, v) in fixed_types:
-            if isinstance(v, Field):
-                for index in range(v.occurrences):
-                    values.append(("{0}{1}".format(k, index), v, v.size))
-            else:
-                values.append((k, v, v.size))
-
+        values = [(k, v, v.size) for (k, v) in attrs.iteritems() if isinstance(v, FixedType)]
         new_cls._fields = [(k, v) for (k, v, s) in sorted(values, key=lambda (k, v, s): v.__order__)]
         new_cls._size = sum([s for k, v, s in values])
         return new_cls
-
 
 
 class EDIModel(object):

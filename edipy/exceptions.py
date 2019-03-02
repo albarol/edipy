@@ -1,17 +1,20 @@
 # coding: utf-8
 
-
 class EDIException(Exception):
-    pass
+    message = u"EDIException"
+
+    def __init__(self, message=None):
+        if message is not None:
+            self.message = message
 
 
 class WrongLayoutError(EDIException):
-    pass
+    message = u"The layout declared is not matching with data read."
 
 
 class ValidationError(EDIException):
-    pass
+    message = u"Field has invalid data."
 
 
-class FieldNotSupportedError(EDIException):
-    pass
+class BadFormatError(EDIException):
+    message = u"Field has a bad format."

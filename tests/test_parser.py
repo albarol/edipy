@@ -84,3 +84,29 @@ def test_parse_group():
     assert example2.bank_identifier == 1
     assert example2.bank_name == "BANCOVEDI         "
 
+#########################
+# Test repeatable fields
+#########################
+
+class Repeatable(fields.EDIModel):
+    example = fields.Field(Example, occurrences=2)
+
+def test_parse_group():
+    with open(FIXTURES_PATH + '/group.edi') as fd:
+        group = parser.parse(Repeatable, fd.read())
+
+    example1 = group.example0
+    assert example1.identifier == 352
+    assert example1.name == "NEDI      "
+    assert example1.date == datetime(2012, 02, 23)
+    assert example1.value == Decimal("71.94")
+    assert example1.bank_identifier == 1
+    assert example1.bank_name == "BANCO EDI         "
+
+    example2 = group.example1
+    assert example2.identifier == 353
+    assert example2.name == "VEDI      "
+    assert example2.date == datetime(2018, 12, 23)
+    assert example2.value == Decimal("881.94")
+    assert example2.bank_identifier == 1
+    assert example2.bank_name == "BANCOVEDI         "

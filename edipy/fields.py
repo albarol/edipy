@@ -27,7 +27,7 @@ class FixedType(object):
 
     def encode(self, value):
         if self.required and (not self._has_value(value) or len(value) != self.size):
-            raise exceptions.ValidationError(u"Field is required.")
+            raise exceptions.RequiredFieldError()
 
         if not self.required and (not value or value.isspace()):
             return None
@@ -186,7 +186,7 @@ class EDIMeta(type):
 
     def __new__(cls, name, bases, attrs):
         new_cls = type.__new__(cls, name, bases, attrs)
-        values = [(k, v, v.size) for (k, v) in attrs.iteritems() if isinstance(v, FixedType)]
+        values = [(k, v, v.length) for (k, v) in attrs.iteritems() if isinstance(v, FixedType)]
         new_cls._fields = [(k, v) for (k, v, s) in sorted(values, key=lambda (k, v, s): v.__order__)]
         new_cls._size = sum([s for k, v, s in values])
         return new_cls

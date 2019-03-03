@@ -18,3 +18,7 @@ class ValidationError(EDIException):
 
 class BadFormatError(EDIException):
     message = u"Field has a bad format."
+
+
+class RequiredFieldError(ValidationError):
+    message = u"Field is required."

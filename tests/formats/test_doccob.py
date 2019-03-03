@@ -25,7 +25,7 @@ def test_parse_doccob_properly():
     assert not interchange.filler
 
     # assert document
-    header = doccob.header
+    header = interchange.header[0]
     assert header
     assert header.identifier == "350"
     assert header.document_identifier == "COBRA270115170"

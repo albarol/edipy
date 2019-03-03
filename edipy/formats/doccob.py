@@ -26,8 +26,6 @@ class ShippingCompany(fields.EDIModel):
     identifier = fields.Identifier("351")
 
 
-
-
 class Doccob(fields.EDIModel):
     interchange = fields.Register(Interchange)
     #header = fields.Register(Header)

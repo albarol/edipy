@@ -39,7 +39,7 @@ def test_parse_example():
     ('352'),
 ])
 def test_parse_example_with_wrong_layout(data):
-    with pytest.raises(exceptions.WrongLayoutError):
+    with pytest.raises(exceptions.ValidationError):
         example = parser.parse(Example, data)
 
 
@@ -61,7 +61,7 @@ def test_parse_example_with_identifier():
 
 
 class Group(fields.EDIModel):
-    example1 = fields.CompositeField(Example)
+    example1 = fields.Register(Example)
     example2 = fields.CompositeField(Example)
 
 def test_parse_group():

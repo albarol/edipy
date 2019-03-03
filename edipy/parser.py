@@ -12,9 +12,6 @@ def parse(model, data):
     for (name, fixed_type) in model_fields:
         value = data[0:fixed_type.length]
 
-        if len(value) != fixed_type.length:
-            raise exceptions.WrongLayoutError('Layout is different from data.')
-
         if isinstance(fixed_type, fields.CompositeField):
             values = _parse_composite(fixed_type, value)
             setattr(instance, name, values)
@@ -22,6 +19,7 @@ def parse(model, data):
             setattr(instance, name, fixed_type.encode(value))
         data = data[fixed_type.length:]
     return instance
+
 
 def _parse_composite(fixed_type, value):
     if fixed_type.occurrences == 1:

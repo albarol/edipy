@@ -23,3 +23,10 @@ def test_parse_doccob_properly():
     assert interchange.time == time(15, 17)
     assert interchange.interchange == "COB270115170"
     assert not interchange.filler
+
+    # assert document
+    header = doccob.header
+    assert header
+    assert header.identifier == "350"
+    assert header.document_identifier == "COBRA270115170"
+    assert not header.filler

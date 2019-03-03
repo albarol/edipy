@@ -17,19 +17,19 @@ class FixedType(object):
     __counter = itertools.count()
     size = 0
 
-    def __init__(self, required=False, validators=None):
+    def __init__(self, required=True, validators=None):
         self.__order__ = self.__counter.next()
         self.validators = validators if validators else []
         self.required = required
 
     def _has_value(self, value):
-        return value and not value.isspace()
+        return value and not value.isspace() 
 
     def encode(self, value):
-        if self.required and not self._has_value(value):
+        if self.required and (not self._has_value(value) or len(value) != self.size):
             raise exceptions.ValidationError(u"Field is required.")
 
-        if not self.required and not self._has_value(value):
+        if not self.required and (not value or value.isspace()):
             return None
 
         value = self._to_python(value)
@@ -51,10 +51,11 @@ class FixedType(object):
         return self.size
 
 
+
 class Integer(FixedType):
     zfill = False
 
-    def __init__(self, size, zfill=False, required=False, validators=None):
+    def __init__(self, size, zfill=False, required=True, validators=None):
         super(Integer, self).__init__(validators=validators, required=required)
         self.size = size
         self.zfill = zfill
@@ -68,7 +69,7 @@ class Integer(FixedType):
 
 class String(FixedType):
 
-    def __init__(self, size, required=False, validators=None):
+    def __init__(self, size, required=True, validators=None):
         super(String, self).__init__(validators=validators, required=required)
         self.size = size
 
@@ -81,7 +82,7 @@ class String(FixedType):
 
 class Identifier(FixedType):
 
-    def __init__(self, identifier, required=False, validators=None):
+    def __init__(self, identifier, required=True, validators=None):
         super(Identifier, self).__init__(validators=validators, required=required)
         self.size = len(identifier)
         self.identifier = identifier
@@ -95,7 +96,7 @@ class Identifier(FixedType):
 
 class Decimal(FixedType):
 
-    def __init__(self, size, digits=0, required=False, validators=None):
+    def __init__(self, size, digits=0, required=True, validators=None):
         super(Decimal, self).__init__(validators=validators, required=required)
         self.size = size + digits
         self.denominator = size
@@ -112,7 +113,7 @@ class Decimal(FixedType):
 
 class DateTime(FixedType):
 
-    def __init__(self, size, date_format, required=False, validators=None):
+    def __init__(self, size, date_format, required=True, validators=None):
         super(DateTime, self).__init__(validators=validators, required=required)
         self.size = size
         self.date_format = date_format
@@ -132,14 +133,17 @@ class Time(DateTime):
 
 class CompositeField(FixedType):
 
-    def __init__(self, cls, occurrences=1, required=False, validators=None):
-        super(CompositeField, self).__init__(validators=validators, required=required)
+    def __init__(self, cls, occurrences=1, required=True):
+        super(CompositeField, self).__init__(validators=None, required=required)
         if not issubclass(cls, EDIModel):
             raise exceptions.BadFormatError(message=u"Field is not subclass of EDIModel.")
 
         self.occurrences = occurrences        
 	self.size = cls._size
         self.model = cls
+
+    def encode(self, value):
+        return self._to_python(value)
 
     def _to_python(self, value):
         return (self.model, value)
@@ -151,8 +155,8 @@ class CompositeField(FixedType):
 
 class Register(CompositeField):
 
-    def __init__(self, cls, occurrences=1, required=False, validators=None):
-        super(Register, self).__init__(cls, occurrences=occurrences, validators=validators, required=required)
+    def __init__(self, cls, occurrences=1, required=True):
+        super(Register, self).__init__(cls, occurrences=occurrences, required=required)
 
         if not cls._fields or not isinstance(cls._fields[0][1], Identifier):
             raise exceptions.BadFormatError(message=u"First argument must be an Identifier.")
@@ -160,7 +164,7 @@ class Register(CompositeField):
 
 class Enum(FixedType):
 
-    def __init__(self, values, required=False, validators=None):
+    def __init__(self, values, required=True, validators=None):
         super(Enum, self).__init__(validators=validators, required=required)
 
         if not values:

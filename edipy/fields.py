@@ -46,11 +46,6 @@ class FixedType(object):
     def _to_edi(self, value):
         return value
 
-    @property
-    def length(self):
-        return self.size
-
-
 
 class Integer(FixedType):
     zfill = False
@@ -138,6 +133,7 @@ class CompositeField(FixedType):
         if not issubclass(cls, EDIModel):
             raise exceptions.BadFormatError(message=u"Field is not subclass of EDIModel.")
 
+
         self.occurrences = occurrences        
 	self.size = cls._size
         self.model = cls
@@ -148,10 +144,6 @@ class CompositeField(FixedType):
     def _to_python(self, value):
         return (self.model, value)
 
-    @property
-    def length(self):
-        return self.occurrences * self.size
-
 
 class Register(CompositeField):
 
@@ -160,6 +152,18 @@ class Register(CompositeField):
 
         if not cls._fields or not isinstance(cls._fields[0][1], Identifier):
             raise exceptions.BadFormatError(message=u"First argument must be an Identifier.")
+
+        if isinstance(occurrences, int):
+            occurrences = (1, occurrences)
+        self.occurrences = occurrences
+
+    @property
+    def min_occurrences(self):
+        return self.occurrences[0]
+
+    @property
+    def max_occurrences(self):
+        return self.occurrences[1]
 
 
 class Enum(FixedType):
@@ -186,7 +190,7 @@ class EDIMeta(type):
 
     def __new__(cls, name, bases, attrs):
         new_cls = type.__new__(cls, name, bases, attrs)
-        values = [(k, v, v.length) for (k, v) in attrs.iteritems() if isinstance(v, FixedType)]
+        values = [(k, v, v.size) for (k, v) in attrs.iteritems() if isinstance(v, FixedType)]
         new_cls._fields = [(k, v) for (k, v, s) in sorted(values, key=lambda (k, v, s): v.__order__)]
         new_cls._size = sum([s for k, v, s in values])
         return new_cls

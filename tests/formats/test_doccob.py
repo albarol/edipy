@@ -30,3 +30,10 @@ def test_parse_doccob_properly():
     assert header.identifier == "350"
     assert header.document_identifier == "COBRA270115170"
     assert not header.filler
+
+    # assert shipping company
+    company = header.company
+    assert company
+    assert company.identifier == "351"
+    assert company.company_identifier == "12345678901234"
+    assert company.company_name == "Transportes Lages LTDA                  "

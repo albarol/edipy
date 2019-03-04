@@ -114,17 +114,31 @@ class DateTime(FixedType):
         self.date_format = date_format
 
     def _to_python(self, value):
-        return datetime.strptime(value, self.date_format)
+        try:
+            return datetime.strptime(value, self.date_format)
+        except ValueError as e:
+            if not self.required:
+                return None
+            raise e
 
 
 class Date(DateTime):
+
     def _to_python(self, value):
-        return datetime.strptime(value, self.date_format).date()
+        ret = super(Date, self)._to_python(value)
+        if ret:
+            return ret.date()
+        return ret
 
 
 class Time(DateTime):
+
     def _to_python(self, value):
-        return datetime.strptime(value, self.date_format).time()
+        ret = super(Time, self)._to_python(value)
+        if ret:
+            return ret.time()
+        return ret
+
 
 class CompositeField(FixedType):
 

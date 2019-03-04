@@ -7,6 +7,13 @@ class EDIException(Exception):
         if message is not None:
             self.message = message
 
+    def __str__(self):
+        return self.message
+
+
+    def __repr__(self):
+        return "<EDIException: {0}>".format(self.message)
+
 
 class WrongLayoutError(EDIException):
     message = u"The layout declared is not matching with data read."

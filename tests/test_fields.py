@@ -1,6 +1,6 @@
 # coding: utf-8
 
-from datetime import datetime
+from datetime import datetime, date, time
 from decimal import Decimal
 
 import pytest
@@ -31,7 +31,15 @@ from edipy import fields, exceptions
 
     (fields.DateTime(8, '%d%m%Y'), '23022012', datetime(2012, 02, 23)),
     (fields.DateTime(14, '%d%m%Y%H%M%S'), '23022012235959', datetime(2012, 02, 23, 23, 59, 59)),
-    (fields.DateTime(8, '%d%m%Y%', required=False), '', None),
+    (fields.DateTime(8, '%d%m%Y', required=False), '', None),
+
+    (fields.Date(6, '%d%m%y'), '230212', date(2012, 02, 23)),
+    (fields.Date(8, '%d%m%Y'), '23022012', date(2012, 02, 23)),
+    (fields.Date(8, '%d%m%Y', required=False), '00000000', None),
+
+    (fields.Time(4, '%H%M'), '2359', time(23, 59)),
+    (fields.Time(6, '%H%M%S'), '235959', time(23, 59, 59)),
+    (fields.Time(6, '%H%M%S', required=False), '250303', None),
 
     (fields.Enum(['I', 'A']), 'I', 'I'),
     (fields.Enum(['I', 'A']), 'A', 'A'),

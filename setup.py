@@ -16,7 +16,7 @@ with open(os.path.join(here, "CHANGES.md")) as versions:
 
 
 def readme():
-    with open("README.md") as readme:
+    with open("README.rst") as readme:
         return readme.read()
 
 

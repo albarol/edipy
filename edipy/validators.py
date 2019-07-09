@@ -24,6 +24,45 @@ class Range(Validator):
         return True
 
 
+class MaxValue(Validator):
+    """Validate if a value is greater than the limit"""
+
+    def __init__(self, max_value):
+        self.max_value = max_value
+
+    def validate(self, value):
+        if not value <= self.max_value:
+            raise exceptions.ValidationError(u"Value {0} is greater than max value.".format(value))
+        return True
+
+
+class MinValue(Validator):
+    """Validate if a value is lesser than then limit"""
+
+    def __init__(self, min_value):
+        self.min_value = min_value
+
+    def validate(self, value):
+        if not value <= self.min_value:
+            raise exceptions.ValidationError(u"Value {0} is lesser than min value.".format(value))
+        return True
+
+
+class Regex(Validator):
+    """Validates if a value matches the expression"""
+
+    def __init__(self, pattern):
+        try:
+            self.pattern = re.compile(r'{0}'.format(pattern))
+        except:
+            raise ValueError("{0} is not a valid regex pattern.")
+
+    def validate(self, value):
+        if not self.pattern.match(value):
+            raise exceptions.ValidationError(u"Value {0} has not matched with regex.".format(value))
+        return True
+
+
 class Email(Validator):
     """Validates if value is a valid email"""
     expression = re.compile(r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)")
@@ -33,19 +72,3 @@ class Email(Validator):
             raise exceptions.ValidationError(u"Value {0} is not a valid email.".format(value))
         return True
 
-
-class Cep(Validator):
-    """Validates if value is a valid cep"""
-    expression = re.compile(r"^[0-9]{8}\b")
-
-    def validate(self, value):
-        if not self.expression.search(value):
-            raise exceptions.ValidationError(u"Value {0} is not a valid cep.".format(value))
-        return True
-
-class Cnpj(Validator):
-    """Validates if value is a valid cnpj"""
-    expression = re.compile(r"^[0-9]{8}\b")
-
-    def validate(self, value):
-        return True

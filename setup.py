@@ -43,8 +43,11 @@ setup(name='edipy',
       author_email='fakeezz@gmail.com',
       license='MIT',
       packages=['edipy'],
+      platforms='any',
       classifiers=[
-        'Programming Language :: Python'
+        'Programming Language :: Python',
+        'Operating System :: OS Independent',
       ],
+      download_url='https://github.com/fakeezz/edipy/tarball/{}'.format(version),
       cmdclass={'version': VersionCommand},
 )

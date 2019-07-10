@@ -1,7 +1,5 @@
 # coding: utf-8
 
-from collections import OrderedDict
-
 from edipy import fields, exceptions
 
 
@@ -44,7 +42,7 @@ def _parse_register(fixed_type, value):
         if not value.startswith(identifier):
             if fixed_type.min_occurrences > 0:
                 raise exceptions.RequiredFieldError()
-            return (None, 0) 
+            return (None, 0)
         return (parse(*fixed_type.encode(value)), fixed_type.size)
 
     els = []
@@ -58,4 +56,3 @@ def _parse_register(fixed_type, value):
         parsed += fixed_type.size
         value = value[fixed_type.size:]
     return (els, parsed)
-

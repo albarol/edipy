@@ -1,5 +1,6 @@
 # coding: utf-8
 
+
 class EDIException(Exception):
     message = u"EDIException"
 
@@ -9,7 +10,6 @@ class EDIException(Exception):
 
     def __str__(self):
         return self.message
-
 
     def __repr__(self):
         return "<EDIException: {0}>".format(self.message)

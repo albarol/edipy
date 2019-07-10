@@ -43,7 +43,7 @@ class MinValue(Validator):
         self.min_value = min_value
 
     def validate(self, value):
-        if not value <= self.min_value:
+        if not value >= self.min_value:
             raise exceptions.ValidationError(u"Value {0} is lesser than min value.".format(value))
         return True
 
@@ -53,9 +53,9 @@ class Regex(Validator):
 
     def __init__(self, pattern):
         try:
-            self.pattern = re.compile(r'{0}'.format(pattern))
+            self.pattern = re.compile(pattern)
         except:
-            raise ValueError("{0} is not a valid regex pattern.")
+            raise ValueError("{0} is not a valid regex pattern.".format(pattern))
 
     def validate(self, value):
         if not self.pattern.match(value):
@@ -71,4 +71,3 @@ class Email(Validator):
         if not self.expression.search(value):
             raise exceptions.ValidationError(u"Value {0} is not a valid email.".format(value))
         return True
-

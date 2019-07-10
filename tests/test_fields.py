@@ -52,9 +52,10 @@ def test_encode_data(fixed_type, value, expected):
     (fields.String(1, required=True), ''),
     (fields.String(1, required=True), '         '),
     (fields.String(1, required=True), None),
+    (fields.Date(6, "%Y%m%d", required=True), 'abcdef'),
 ])
 def test_required_data(fixed_type, value):
-    with pytest.raises(exceptions.ValidationError):
+    with pytest.raises(exceptions.EDIException):
         fixed_type.encode(value)
 
 
@@ -65,6 +66,7 @@ def test_register_validate_type():
     with pytest.raises(exceptions.BadFormatError):
         fields.Register(NoEDIModel)
 
+
 def test_register_validate_identifier():
     class MyEDIModel(fields.EDIModel):
         identifier = fields.Integer(3)
@@ -73,7 +75,23 @@ def test_register_validate_identifier():
         fields.Register(MyEDIModel)
 
 
+@pytest.mark.parametrize('occurrences', [0, -1, -10])
+def test_register_validate_occurrences(occurrences):
+    class MyEDIModel(fields.EDIModel):
+        identifier = fields.Identifier("000")
+
+    with pytest.raises(exceptions.BadFormatError):
+        fields.Register(MyEDIModel, occurrences=occurrences)
+
+
 @pytest.mark.parametrize('values', [[], ['AB', 'A']])
-def test_field_validate_enum(values):
+def test_enum_validate_format(values):
     with pytest.raises(exceptions.BadFormatError):
         fields.Enum(values)
+
+
+@pytest.mark.parametrize('choice', ['1', '2', '3'])
+def test_enum_validate_contains(choice):
+    fixed_type = fields.Enum(['a', 'b', 'c'])
+    with pytest.raises(exceptions.ValidationError):
+        fixed_type.encode(choice)

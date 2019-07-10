@@ -28,7 +28,7 @@ def test_parse_example():
     example = parser.parse(Example, line)
     assert example.identifier == "352"
     assert example.name == "NEDI      "
-    assert example.date == datetime(2012, 02, 23)
+    assert example.date == datetime(2012, 2, 23)
     assert example.value == Decimal("71.94")
     assert example.bank_identifier == 1
     assert example.bank_name == "BANCO EDI         "
@@ -71,7 +71,7 @@ def test_parse_group():
     example1 = group.example1
     assert example1.identifier == "352"
     assert example1.name == "NEDI      "
-    assert example1.date == datetime(2012, 02, 23)
+    assert example1.date == datetime(2012, 2, 23)
     assert example1.value == Decimal("71.94")
     assert example1.bank_identifier == 1
     assert example1.bank_name == "BANCO EDI         "
@@ -98,7 +98,7 @@ def test_parse_repeatable():
     example1 = group.example[0]
     assert example1.identifier == '352'
     assert example1.name == "NEDI      "
-    assert example1.date == datetime(2012, 02, 23)
+    assert example1.date == datetime(2012, 2, 23)
     assert example1.value == Decimal("71.94")
     assert example1.bank_identifier == 1
     assert example1.bank_name == "BANCO EDI         "

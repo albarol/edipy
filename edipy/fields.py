@@ -2,28 +2,19 @@
 
 from datetime import datetime
 from decimal import Decimal as DecimalType
-from collections import OrderedDict
-import itertools
 
 from edipy import exceptions
 
 
 class FixedType(object):
-    """
-    Due python 2.7 does not respect the order of
-    class declaration, here we have to set a counter
-    which will emulate the order.
-    """
-    __counter = itertools.count()
     size = 0
 
     def __init__(self, required=True, validators=None):
-        self.__order__ = self.__counter.next()
         self.validators = validators if validators else []
         self.required = required
 
     def _has_value(self, value):
-        return value and not value.isspace() 
+        return value and not value.isspace()
 
     def encode(self, value):
         if self.required and (not self._has_value(value) or len(value) != self.size):
@@ -40,12 +31,6 @@ class FixedType(object):
     def _to_python(self, value):
         return str(value)
 
-    def decode(self, value):
-        return self._to_edi(value)
-
-    def _to_edi(self, value):
-        return value
-
 
 class Integer(FixedType):
     zfill = False
@@ -58,9 +43,6 @@ class Integer(FixedType):
     def _to_python(self, value):
         return int(value[-self.size:])
 
-    def decode(self, value):
-        return str(value)
-
 
 class String(FixedType):
 
@@ -71,9 +53,6 @@ class String(FixedType):
     def _to_python(self, value):
         return value[:self.size]
 
-    def decode(self, value):
-        return value
-
 
 class Identifier(FixedType):
 
@@ -81,7 +60,6 @@ class Identifier(FixedType):
         super(Identifier, self).__init__(validators=validators, required=required)
         self.size = len(identifier)
         self.identifier = identifier
-
 
     def _to_python(self, value):
         if value != self.identifier:
@@ -116,10 +94,10 @@ class DateTime(FixedType):
     def _to_python(self, value):
         try:
             return datetime.strptime(value, self.date_format)
-        except ValueError as e:
+        except ValueError:
             if not self.required:
                 return None
-            raise e
+            raise exceptions.WrongLayoutError(message=u"Date format {0} did not match with value".format(value))
 
 
 class Date(DateTime):
@@ -147,9 +125,8 @@ class CompositeField(FixedType):
         if not issubclass(cls, EDIModel):
             raise exceptions.BadFormatError(message=u"Field is not subclass of EDIModel.")
 
-
-        self.occurrences = occurrences        
-	self.size = cls._size
+        self.occurrences = occurrences
+        self.size = cls._size
         self.model = cls
 
     def encode(self, value):
@@ -168,6 +145,8 @@ class Register(CompositeField):
             raise exceptions.BadFormatError(message=u"First argument must be an Identifier.")
 
         if isinstance(occurrences, int):
+            if occurrences < 1:
+                raise exceptions.BadFormatError(message=u"Occurrences should be greater than zero.")
             occurrences = (1, occurrences)
         self.occurrences = occurrences
 
@@ -188,7 +167,7 @@ class Enum(FixedType):
         if not values:
             raise exceptions.BadFormatError(u"Empty value is not a valid value.")
 
-        self.values = map(str, values)
+        self.values = [str(v) for v in values]
         self.size = len(self.values[0])
 
         if not all([len(v) == self.size for v in self.values]):
@@ -204,11 +183,14 @@ class EDIMeta(type):
 
     def __new__(cls, name, bases, attrs):
         new_cls = type.__new__(cls, name, bases, attrs)
-        values = [(k, v, v.size) for (k, v) in attrs.iteritems() if isinstance(v, FixedType)]
-        new_cls._fields = [(k, v) for (k, v, s) in sorted(values, key=lambda (k, v, s): v.__order__)]
+        values = [(k, v, v.size) for (k, v) in attrs.items() if isinstance(v, FixedType)]
+        new_cls._fields = [(k, v) for (k, v, s) in values]
         new_cls._size = sum([s for k, v, s in values])
         return new_cls
 
 
 class EDIModel(object):
-    __metaclass__ = EDIMeta
+    pass
+
+
+EDIModel = EDIMeta(EDIModel.__name__, EDIModel.__bases__, {})

@@ -8,7 +8,7 @@ here = os.path.abspath(os.path.dirname(__file__))
 
 
 version = "0.0.0"
-with open(os.path.join(here, "CHANGES.md")) as versions:
+with open(os.path.join(here, "CHANGES.txt")) as versions:
     for line in versions:
         version = line.strip()
         if re.search(r'^[0-9]+\.[0-9]+(\.[0-9]+)?$', version):

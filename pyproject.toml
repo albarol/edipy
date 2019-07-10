@@ -9,7 +9,7 @@ authors = [
     "Alexandre Barbieri <alexandre.dev.barbieri@gmail.com>"
 ]
 
-readme = 'README.md'  # Markdown files are supported
+readme = 'README.rst'  # Markdown files are supported
 
 repository = "https://github.com/fakeezz/edipy"
 homepage = "https://github.com/fakeezz/edipy"

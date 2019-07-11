@@ -12,7 +12,12 @@ class Validator(object):
 
 
 class Range(Validator):
-    """Validates if a value is comprise in two values"""
+    """
+    Validate if a value is within a specific range of values
+
+    :param min_value: minimum value of the validation range.
+    :param max_value: maximum value of the validation range.
+    """
 
     def __init__(self, min_value, max_value):
         self.min_value = min_value
@@ -25,7 +30,11 @@ class Range(Validator):
 
 
 class MaxValue(Validator):
-    """Validate if a value is greater than the limit"""
+    """
+    Validate if a value is greater than the limit
+
+    :param max_value: maximum value allowed.
+    """
 
     def __init__(self, max_value):
         self.max_value = max_value
@@ -37,20 +46,27 @@ class MaxValue(Validator):
 
 
 class MinValue(Validator):
-    """Validate if a value is lesser than then limit"""
+    """
+    Validate if a value is less than the limit
+
+    :param min_value: minimum value allowed.
+    """
 
     def __init__(self, min_value):
         self.min_value = min_value
 
     def validate(self, value):
         if not value >= self.min_value:
-            raise exceptions.ValidationError(u"Value {0} is lesser than min value.".format(value))
+            raise exceptions.ValidationError(u"Value {0} is less than min value.".format(value))
         return True
 
 
 class Regex(Validator):
-    """Validates if a value matches the expression"""
+    """
+    Validates if a value matches the pattern
 
+    :param pattern: regular expression
+    """
     def __init__(self, pattern):
         try:
             self.pattern = re.compile(pattern)
@@ -64,10 +80,12 @@ class Regex(Validator):
 
 
 class Email(Validator):
-    """Validates if value is a valid email"""
+    """
+    Validates if value is a valid email
+    """
     expression = re.compile(r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)")
 
     def validate(self, value):
-        if not self.expression.search(value):
+        if not self.expression.search(value.strip()):
             raise exceptions.ValidationError(u"Value {0} is not a valid email.".format(value))
         return True

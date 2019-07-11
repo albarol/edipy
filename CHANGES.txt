@@ -1,4 +1,12 @@
+0.0.2
+=====
+
+  - Change e-mail validator to strip data when validate
+  - Add docs
+  - Fix load of CHANGES.txt inside setup.py
+
+
 0.0.1
 =====
 
-    - Very first version
+  - Very first version

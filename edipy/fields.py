@@ -1,5 +1,8 @@
 # coding: utf-8
 
+import collections
+import itertools
+
 from datetime import datetime
 from decimal import Decimal as DecimalType
 
@@ -7,9 +10,11 @@ from edipy import exceptions
 
 
 class FixedType(object):
+    __counter = itertools.count()
     size = 0
 
     def __init__(self, required=True, validators=None):
+        self.__order__ = next(self.__counter)
         self.validators = validators if validators else []
         self.required = required
 
@@ -184,7 +189,7 @@ class EDIMeta(type):
     def __new__(cls, name, bases, attrs):
         new_cls = type.__new__(cls, name, bases, attrs)
         values = [(k, v, v.size) for (k, v) in attrs.items() if isinstance(v, FixedType)]
-        new_cls._fields = [(k, v) for (k, v, s) in values]
+        new_cls._fields = [(k, v) for (k, v, s) in sorted(values, key=lambda value: value[1].__order__)]
         new_cls._size = sum([s for k, v, s in values])
         return new_cls
 
